@@ -1,14 +1,151 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="assets/styles/reset.css">
-    <link rel="stylesheet" href="assets/styles/style.css">
-    <title>ToDoList</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindSpace</title>
+  <link rel="stylesheet" href="assets/styles/reset.css">
+  <link rel="stylesheet" href="assets/styles/style.css">
 </head>
 <body>
-    <div class="header"></div>
-    div.
+
+  <div id="toasts" class="toasts"></div>
+
+  <div id="authScreen" class="auth">
+    <section class="auth_hero">
+      <div class="auth_logo">
+        <span class="auth_logo-mark">M</span>
+        <span class="auth_logo-text">MindSpace</span>
+      </div>
+      <h1>Спокойный порядок в задачах</h1>
+      <p class="auth_text">
+        Приоритеты, сроки, зависимости и статистика выполнения проекта — всё на одном экране.
+      </p>
+      <ul class="auth_facts">
+        <li><b>5</b> статусов задачи</li>
+        <li><b>4</b> уровня приоритета</li>
+      </ul>
+    </section>
+
+    <section class="auth_box">
+      <div class="form">
+        <div class="auth_tabs">
+          <button type="button" id="tabLogin" class="auth_tab is-active">Вход</button>
+          <button type="button" id="tabRegister" class="auth_tab">Регистрация</button>
+        </div>
+
+        <form id="loginForm" class="form" novalidate>
+          <div class="form-error" hidden></div>
+
+          <label class="field" data-field="email">
+            <span>Электронная почта</span>
+            <input type="email" name="email" placeholder="you@mindspace.app">
+            <em class="field__error"></em>
+          </label>
+
+          <label class="field" data-field="password">
+            <span>Пароль</span>
+            <input type="password" name="password" placeholder="минимум 6 символов">
+            <em class="field__error"></em>
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-block">Войти</button>
+        </form>
+
+        <form id="registerForm" class="form" hidden novalidate>
+          <div class="form-error" hidden></div>
+
+          <label class="field" data-field="name">
+            <span>Имя и фамилия</span>
+            <input type="text" name="name" placeholder="Владислав Алексеевич">
+            <em class="field__error"></em>
+          </label>
+
+          <label class="field" data-field="email">
+            <span>Электронная почта</span>
+            <input type="email" name="email" placeholder="you@mindspace.app">
+            <em class="field__error"></em>
+          </label>
+
+          <label class="field" data-field="password">
+            <span>Пароль</span>
+            <input type="password" name="password" placeholder="минимум 6 символов">
+            <em class="field__error"></em>
+          </label>
+
+          <label class="field" data-field="password2">
+            <span>Повтор пароля</span>
+            <input type="password" name="password2" placeholder="минимум 6 символов">
+            <em class="field__error"></em>
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-block">Создать аккаунт</button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <div id="appScreen" class="app" hidden>
+    <header class="header">
+      <b class="logo">MindSpace</b>
+
+      <input type="search" id="searchInput" class="header_search" placeholder="Поиск по задачам...">
+
+      <div class="header_user">
+        <span class="user_avatar" id="userAvatar" hidden></span>
+        <span class="user_avatar" id="userInitials" hidden></span>
+        <div class="header_user-text">
+          <b id="userName">Пользователь</b>
+          <small id="userRole" class="muted">Участник проекта</small>
+          <small id="userEmail" class="muted" hidden></small>
+        </div>
+        <button type="button" id="logoutBtn" class="btn btn-ghost btn-small">Выйти</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar_title">Пространство</div>
+        <nav class="nav" id="mainNav">
+          <button type="button" class="nav_item is-active" data-view="overview">Обзор</button>
+          <button type="button" class="nav_item" data-view="board">Доска задач</button>
+          <button type="button" class="nav_item" data-view="table">Таблица</button>
+        </nav>
+
+        <div class="sidebar_title">Проекты</div>
+        <div id="projectList" class="projects"></div>
+      </aside>
+
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h1 id="pageTitle">Задачи</h1>
+            <p id="pageSubtitle">Управление задачами и зависимостями</p>
+          </div>
+          <div class="toolbar">
+            <button type="button" id="newTaskBtn" class="btn btn-primary">+ Новая задача</button>
+          </div>
+        </div>
+
+        <div id="viewContainer"></div>
+      </main>
+    </div>
+  </div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal_backdrop" data-close="modal"></div>
+    <div class="modal_window">
+      <div class="modal_head">
+        <h3 id="modalTitle">Заголовок</h3>
+        <button type="button" class="icon-btn" data-close="modal">✕</button>
+      </div>
+      <div class="modal_body" id="modalBody"></div>
+      <div class="modal_foot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <script src="assets/scripts/data.js"></script>
+  <script src="assets/scripts/render.js"></script>
+  <script src="assets/scripts/app.js"></script>
 </body>
 </html>
