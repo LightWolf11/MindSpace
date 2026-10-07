@@ -489,7 +489,7 @@ function submitLogin(event) {
         }
 
         if (!storedUser || !storedUser.user) {
-            showAuthError("loginForm", "Неверный адрес или пароль. Воспользуйтесь демо-доступом или зарегистрируйтесь.");
+            showAuthError("loginForm", "Неверный адрес или пароль. Зарегистрируйтесь.");
             return;
         }
 
