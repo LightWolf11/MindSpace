@@ -557,11 +557,11 @@ function submitRegister(event) {
     try {
         window.localStorage.setItem(userStorageKey(user.email), JSON.stringify(userData));
     } catch (error) {
-        showAuthError("registerForm", "Не удалось создать аккаунт в локальном хранилище.");
+        showAuthError("registerForm", "Не удалось создать аккаунт.");
         return;
     }
 
-    startSession(user, "Аккаунт создан локально, сервер не используется.");
+    startSession(user, "Аккаунт создан.");
 }
 
 function logout() {
@@ -569,7 +569,7 @@ function logout() {
     saveState();
     closeModal();
     showAuthScreen();
-    showToast("success", "Вы вышли из профиля", "Данные задач сохранены в браузере.");
+    showToast("success", "Вы вышли из профиля", "Данные сохранены в cookie.");
 }
 
 function bindAuth() {
