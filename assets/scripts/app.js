@@ -503,7 +503,7 @@ function submitLogin(event) {
         return;
     }
 
-    startSession(demoUser(), "Вы вошли в демонстрационный профиль.");
+    startSession(demoUser(), "Вы вошли в профиль.");
 }
 
 function submitRegister(event) {
