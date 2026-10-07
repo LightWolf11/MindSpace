@@ -49,12 +49,12 @@ function showToast(type, title, text) {
         return;
     }
     var node = h("div", { class: "toast toast--" + type }, [
-        h("div", { class: "toast__body" }, [
-            h("p", { class: "toast__title", text: title }),
-            text ? h("p", { class: "toast__text", text: text }) : null
+        h("div", { class: "toast_body" }, [
+            h("p", { class: "toast_title", text: title }),
+            text ? h("p", { class: "toast_text", text: text }) : null
         ]),
         h("button", {
-            class: "toast__close",
+            class: "toast_close",
             type: "button",
             text: "×",
             "aria-label": "Закрыть",
@@ -215,7 +215,7 @@ function statusSelect(task) {
 
 function progressBar(percent) {
     return h("div", { class: "progress" }, [
-        h("div", { class: "progress__bar", style: "width:" + percent + "%" })
+        h("div", { class: "progress_bar", style: "width:" + percent + "%" })
     ]);
 }
 
@@ -225,8 +225,8 @@ function emptyState(text) {
 
 function metricCard(value, label, modifier) {
     return h("div", { class: "stat-card" + (modifier ? " " + modifier : "") }, [
-        h("span", { class: "stat-card__value", text: String(value) }),
-        h("span", { class: "stat-card__label", text: label })
+        h("span", { class: "stat-card_value", text: String(value) }),
+        h("span", { class: "stat-card_label", text: label })
     ]);
 }
 
@@ -235,9 +235,9 @@ function barRow(label, value, total, color) {
     return h("div", { class: "bar-row" }, [
         h("span", { text: label }),
         h("div", { class: "bar" }, [
-            h("div", { class: "bar__fill", style: "width:" + percent + "%;background:" + color })
+            h("div", { class: "bar_fill", style: "width:" + percent + "%;background:" + color })
         ]),
-        h("span", { class: "bar__value", text: String(value) })
+        h("span", { class: "bar_value", text: String(value) })
     ]);
 }
 
@@ -254,7 +254,7 @@ function pageHead(title, subtitle, side) {
 function taskListRow(task, side) {
     return h("div", { class: "list-row" }, [
         h("span", {
-            class: "list-row__title",
+            class: "list-row_title",
             text: task.title,
             on: {
                 click: function () {
@@ -262,7 +262,7 @@ function taskListRow(task, side) {
                 }
             }
         }),
-        h("span", { class: "list-row__side" }, side)
+        h("span", { class: "list-row_side" }, side)
     ]);
 }
 
@@ -307,7 +307,7 @@ function taskCard(task) {
 draggable: "true"
     }, [
         h("p", {
-            class: "task__title",
+            class: "task_title",
             text: task.title,
             on: {
                 click: function () {
@@ -316,11 +316,11 @@ draggable: "true"
             }
         }),
         h("p", { class: "faint", text: projectById(task.projectId).name }),
-        task.description ? h("p", { class: "task__desc", text: task.description }) : null,
-        h("div", { class: "task__meta" }, meta),
+        task.description ? h("p", { class: "task_desc", text: task.description }) : null,
+        h("div", { class: "task_meta" }, meta),
         depsNode,
         blockedAlert(task),
-        h("div", { class: "task__actions" }, [
+        h("div", { class: "task_actions" }, [
             statusSelect(task),
             h("button", {
                 class: "btn btn--icon",
@@ -381,7 +381,7 @@ function renderSidebar() {
             }
         }
     }, [
-        h("span", { class: "project__dot", style: "background:#d2a79e" }),
+        h("span", { class: "project_dot", style: "background:#d2a79e" }),
         h("span", { class: "truncate", text: "Новый проект" })
     ]));
 }
@@ -397,9 +397,9 @@ function projectButton(id, title, color, count) {
             }
         }
     }, [
-        h("span", { class: "project__dot", style: "background:" + color }),
+        h("span", { class: "project_dot", style: "background:" + color }),
         h("span", { class: "truncate", text: title }),
-        h("span", { class: "project__count", text: String(count) })
+        h("span", { class: "project_count", text: String(count) })
     ]);
 }
 
@@ -442,16 +442,16 @@ function renderOverview() {
     ]);
 
     var progressCard = h("div", { class: "card" }, [
-        h("p", { class: "card__title", text: "Прогресс проекта" }),
+        h("p", { class: "card_title", text: "Прогресс проекта" }),
         h("div", { class: "progress-row" }, [
-            h("div", { class: "progress-row__head" }, [
+            h("div", { class: "progress-row_head" }, [
                 h("span", { text: "Завершено " + stats.done + " из " + stats.total + " задач" }),
                 h("span", { text: stats.progress + "%" })
             ]),
             progressBar(stats.progress)
         ]),
         h("div", { class: "progress-row", style: "margin-top:14px" }, [
-            h("div", { class: "progress-row__head" }, [
+            h("div", { class: "progress-row_head" }, [
                 h("span", { text: "Часы: " + stats.hoursDone + " из " + stats.hoursTotal }),
                 h("span", { text: hoursPercent(stats) + "%" })
             ]),
@@ -460,7 +460,7 @@ function renderOverview() {
     ]);
 
     var attentionCard = h("div", { class: "card" }, [
-        h("p", { class: "card__title", text: "Требует внимания" }),
+        h("p", { class: "card_title", text: "Требует внимания" }),
         attention.length ? h("div", { class: "list-block" }, attention.slice(0, 6).map(function (task) {
             return taskListRow(task, [
                 isOverdue(task) ? h("span", { class: "badge badge--overdue", text: "Просрочено" }) : null,
@@ -471,7 +471,7 @@ function renderOverview() {
     ]);
 
     var soonCard = h("div", { class: "card" }, [
-        h("p", { class: "card__title", text: "Ближайшие сроки" }),
+        h("p", { class: "card_title", text: "Ближайшие сроки" }),
         soon.length ? h("div", { class: "list-block" }, soon.slice(0, 6).map(function (task) {
             return taskListRow(task, [
                 priorityBadge(task),
@@ -481,7 +481,7 @@ function renderOverview() {
     ]);
 
     var importantCard = h("div", { class: "card" }, [
-        h("p", { class: "card__title", text: "Высокий и критический приоритет" }),
+        h("p", { class: "card_title", text: "Высокий и критический приоритет" }),
         important.length ? h("div", { class: "list-block" }, important.slice(0, 8).map(function (task) {
             return taskListRow(task, [
                 statusBadge(task),
@@ -491,7 +491,7 @@ function renderOverview() {
     ]);
 
     var projectsCard = h("div", { class: "card" }, [
-        h("p", { class: "card__title", text: "Прогресс по проектам" }),
+        h("p", { class: "card_title", text: "Прогресс по проектам" }),
         h("div", { class: "bars" }, state.projects.map(function (project) {
             var data = stats.byProject[project.id] || { total: 0, done: 0 };
             var percent = data.total ? Math.round((data.done / data.total) * 100) : 0;
@@ -499,11 +499,11 @@ function renderOverview() {
                 h("span", { text: project.name }),
                 h("div", { class: "bar" }, [
                     h("div", {
-                        class: "bar__fill",
+                        class: "bar_fill",
                         style: "width:" + percent + "%;background:" + project.color
                     })
                 ]),
-                h("span", { class: "bar__value", text: percent + "%" })
+                h("span", { class: "bar_value", text: percent + "%" })
             ]);
         }))
     ]);
@@ -542,7 +542,7 @@ function renderList() {
         return h("tr", {}, [
             h("td", {}, [
                 h("span", {
-                    class: "table__title",
+                    class: "table_title",
                     text: task.title,
                     on: {
                         click: function () {
@@ -574,7 +574,7 @@ function renderList() {
             ]),
             h("td", { class: "muted", text: task.estimate ? task.estimate + " ч" : "—" }),
             h("td", {}, [
-                h("div", { class: "table__actions" }, [
+                h("div", { class: "table_actions" }, [
                     h("button", {
                         class: "btn btn--icon",
                         type: "button",
@@ -692,17 +692,17 @@ function renderBoard() {
         var items = tasks.filter(function (task) {
             return task.status === status.id;
         });
-        var body = h("div", { class: "column__body" }, items.length ? items.map(taskCard) : [
-            h("p", { class: "column__empty", text: "Пусто" })
+        var body = h("div", { class: "column_body" }, items.length ? items.map(taskCard) : [
+            h("p", { class: "column_empty", text: "Пусто" })
         ]);
 
         var column = h("section", {
             class: "column",
             data: { status: status.id }
         }, [
-            h("div", { class: "column__head" }, [
-                h("span", { class: "column__title", text: status.title }),
-                h("span", { class: "column__count", text: String(items.length) })
+            h("div", { class: "column_head" }, [
+                h("span", { class: "column_title", text: status.title }),
+                h("span", { class: "column_count", text: String(items.length) })
             ]),
             body
         ]);
@@ -771,22 +771,22 @@ function renderStats() {
     ]);
 
     var donut = h("div", { class: "donut" }, [
-        h("div", { class: "donut__chart", style: "background:" + donutGradient(stats) }, [
-            h("div", { class: "donut__center" }, [
-                h("span", { class: "donut__value", text: stats.progress + "%" }),
-                h("span", { class: "donut__label", text: "готово" })
+        h("div", { class: "donut_chart", style: "background:" + donutGradient(stats) }, [
+            h("div", { class: "donut_center" }, [
+                h("span", { class: "donut_value", text: stats.progress + "%" }),
+                h("span", { class: "donut_label", text: "готово" })
             ])
         ]),
         h("div", { class: "legend" }, STATUSES.map(function (status) {
             var count = stats.byStatus[status.id] || 0;
             var percent = stats.total ? Math.round((count / stats.total) * 100) : 0;
-            return h("div", { class: "legend__item" }, [
+            return h("div", { class: "legend_item" }, [
                 h("span", {
-                    class: "legend__dot",
+                    class: "legend_dot",
                     style: "background:" + statusColor(status.id)
                 }),
                 h("span", { text: status.title + " · " + percent + "%" }),
-                h("span", { class: "legend__count", text: String(count) })
+                h("span", { class: "legend_count", text: String(count) })
             ]);
         }))
     ]);
@@ -817,21 +817,21 @@ function renderStats() {
         metrics,
         h("div", { class: "two-col", style: "margin-bottom:16px" }, [
             h("div", { class: "card" }, [
-                h("p", { class: "card__title", text: "Распределение по статусам" }),
+                h("p", { class: "card_title", text: "Распределение по статусам" }),
                 donut
             ]),
             h("div", { class: "card" }, [
-                h("p", { class: "card__title", text: "Задачи по приоритету" }),
+                h("p", { class: "card_title", text: "Задачи по приоритету" }),
                 priorityBars
             ])
         ]),
         h("div", { class: "two-col" }, [
             h("div", { class: "card" }, [
-                h("p", { class: "card__title", text: "Выполнено задач по проектам" }),
+                h("p", { class: "card_title", text: "Выполнено задач по проектам" }),
                 projectBars
             ]),
             h("div", { class: "card" }, [
-                h("p", { class: "card__title", text: "Показатели работы" }),
+                h("p", { class: "card_title", text: "Показатели работы" }),
                 insights
             ])
         ])
@@ -841,7 +841,7 @@ function renderStats() {
 function insightRow(label, value) {
     return h("div", { class: "list-row" }, [
         h("span", { class: "muted", text: label }),
-        h("span", { class: "list-row__side" }, [
+        h("span", { class: "list-row_side" }, [
             h("b", { text: value })
         ])
     ]);

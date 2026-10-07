@@ -6,7 +6,7 @@ function fieldBox(label, control, key) {
     return h("label", { class: "field", data: { field: key } }, [
         h("span", { text: label }),
         control,
-        h("em", { class: "field__error" })
+        h("em", { class: "field_error" })
     ]);
 }
 
@@ -14,7 +14,7 @@ function setFormErrors(form, errors) {
     form.querySelectorAll("[data-field]").forEach(function (box) {
         var key = box.dataset.field;
         var message = errors[key] || "";
-        var output = box.querySelector(".field__error");
+        var output = box.querySelector(".field_error");
         box.classList.toggle("is-invalid", Boolean(message));
         if (output) {
             output.textContent = message;
@@ -126,7 +126,7 @@ function openTaskForm(id) {
         h("div", { class: "field full", data: { field: "title" } }, [
             h("span", { text: "Название задачи" }),
             textBox("title", task ? task.title : "", "Например: собрать макет экрана"),
-            h("em", { class: "field__error" })
+            h("em", { class: "field_error" })
         ]),
         fieldBox("Проект", selectBox("projectId", state.projects.map(function (project) {
             return { id: project.id, title: project.name };
@@ -143,7 +143,7 @@ function openTaskForm(id) {
         h("div", { class: "field full", data: { field: "dependsOn" } }, [
             h("span", { text: "Зависит от задач" }),
             dependencyPicker(id, values),
-            h("em", { class: "field__error" })
+            h("em", { class: "field_error" })
         ]),
         h("div", { class: "field full", data: { field: "description" } }, [
             h("span", { text: "Описание" }),
@@ -151,7 +151,7 @@ function openTaskForm(id) {
                 data: { input: "description" },
                 placeholder: "Что нужно сделать и как понять, что задача готова"
             }, [task ? task.description : ""]),
-            h("em", { class: "field__error" })
+            h("em", { class: "field_error" })
         ])
     ]);
 
@@ -267,14 +267,14 @@ function openTaskDetails(id) {
             detailRow("Обновлена", formatDate(task.updatedAt))
         ]),
         task.description ? h("p", { style: "margin-bottom:16px", text: task.description }) : null,
-        h("p", { class: "card__title", text: "Зависимости" }),
+        h("p", { class: "card_title", text: "Зависимости" }),
         deps.length ? h("div", { class: "deps", style: "margin-bottom:16px" }, deps.map(function (dep) {
-            return h("div", { class: "deps__item" }, [
+            return h("div", { class: "deps_item" }, [
                 h("span", {
-                    class: "deps__state " + (dep.status === "done" ? "deps__state--done" : "deps__state--wait")
+                    class: "deps_state " + (dep.status === "done" ? "deps_state--done" : "deps_state--wait")
                 }),
                 h("span", {
-                    class: "task__title",
+                    class: "task_title",
                     text: dep.title + " · " + statusById(dep.status).title,
                     on: {
                         click: function () {
@@ -285,7 +285,7 @@ function openTaskDetails(id) {
             ]);
         })) : h("p", { class: "muted", style: "margin-bottom:16px", text: "Задача не зависит от других." }),
         dependents.length ? h("div", {}, [
-            h("p", { class: "card__title", text: "От неё зависят" }),
+            h("p", { class: "card_title", text: "От неё зависят" }),
             h("div", { class: "chips", style: "margin-bottom:16px" }, dependents.map(function (item) {
                 return h("span", { class: "chip", text: item.title + " · " + statusById(item.status).title });
             }))
@@ -346,7 +346,7 @@ function openProjectForm() {
     var body = h("div", { class: "field" }, [
         h("span", { text: "Название" }),
         name,
-        h("em", { class: "field__error", text: "" }),
+        h("em", { class: "field_error", text: "" }),
         h("span", { text: "Цвет метки", style: "margin-top:10px" }),
         color
     ]);
@@ -366,7 +366,7 @@ function openProjectForm() {
             on: {
                 click: function () {
                     var title = name.value.trim();
-                    var error = body.querySelector(".field__error");
+                    var error = body.querySelector(".field_error");
                     if (title.length < 2) {
                         error.textContent = "Название не короче двух символов";
                         name.focus();
@@ -636,7 +636,7 @@ function bindApp() {
                 return;
             }
             state.view = button.dataset.view;
-            document.querySelectorAll("#mainNav .nav__item").forEach(function (item) {
+            document.querySelectorAll("#mainNav .nav_item").forEach(function (item) {
                 item.classList.toggle("is-active", item.dataset.view === state.view);
             });
             renderView();
