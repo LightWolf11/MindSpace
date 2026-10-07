@@ -542,7 +542,7 @@ function submitRegister(event) {
         id: "user-" + normalizedEmail.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
         name: values.name,
         email: normalizedEmail,
-        role: "Участник проекта",
+        role: "",
         initials: initialsFrom(values.name)
     };
 
