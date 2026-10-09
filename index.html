@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MindSpace</title>
+  <link rel="icon" type="image/jpeg" href="assets/images/mindspace-favicon.jpg?v=20261010-favicon-smaller">
   <link rel="stylesheet" href="assets/styles/reset.css">
-  <link rel="stylesheet" href="assets/styles/style.css?v=20261009-cleanup-colors">
+  <link rel="stylesheet" href="assets/styles/style.css?v=20261010-disabled-button-contrast">
 </head>
 <body>
 
@@ -14,7 +15,7 @@
   <div id="authScreen" class="auth">
     <section class="auth_hero">
       <div class="auth_logo">
-        <span class="auth_logo-mark">M</span>
+        <img class="auth_logo-mark" src="assets/images/mindspace-logo.jpg" alt="" aria-hidden="true">
         <span class="auth_logo-text">MindSpace</span>
       </div>
       <h1>Спокойный порядок в задачах</h1>
@@ -83,19 +84,29 @@
         </form>
       </div>
     </section>
+
+    <footer class="site-footer">
+      <span>2026 - Developed by</span>
+      <a href="https://t.me/lightwolf" target="_blank" rel="noopener noreferrer">LightWolf</a>
+    </footer>
   </div>
 
   <div id="appScreen" class="app" hidden>
     <header class="header">
       <button type="button" id="homeBtn" class="logo" aria-label="На главную" title="На главную">
-        <span class="logo_mark" aria-hidden="true">M</span>
+        <img class="logo_mark" src="assets/images/mindspace-logo.jpg" alt="" aria-hidden="true">
         <span>MindSpace</span>
       </button>
 
       <input type="search" id="searchInput" class="header_search" placeholder="Поиск по задачам...">
 
       <div class="header_user">
-        <button type="button" id="notificationsBtn" class="btn btn-ghost btn-small" hidden>Приглашения</button>
+        <button type="button" id="notificationsBtn" class="btn btn-ghost notification-btn" aria-label="Приглашения" title="Приглашения" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+          </svg>
+          <span id="notificationCount" class="notification-count" hidden></span>
+        </button>
         <span class="user_avatar" id="userAvatar" hidden></span>
         <div class="header_user-text">
           <b id="userName">Пользователь</b>
@@ -136,6 +147,11 @@
         <div id="viewContainer"></div>
       </main>
     </div>
+
+    <footer class="site-footer">
+      <span>2026 - Developed by</span>
+      <a href="https://t.me/lightwolf" target="_blank" rel="noopener noreferrer">LightWolf</a>
+    </footer>
   </div>
 
   <div id="modal" class="modal" hidden>
@@ -150,8 +166,8 @@
     </div>
   </div>
 
-  <script src="assets/scripts/data.js?v=20261009-collaboration"></script>
-  <script src="assets/scripts/render.js?v=20261009-collaboration"></script>
-  <script src="assets/scripts/app.js?v=20261009-cleanup-colors"></script>
+  <script src="assets/scripts/data.js?v=20261010-project-delete-password"></script>
+  <script src="assets/scripts/render.js?v=20261010-project-delete-password"></script>
+  <script src="assets/scripts/app.js?v=20261010-project-delete-password"></script>
 </body>
 </html>

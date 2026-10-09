@@ -97,7 +97,6 @@ const russianErrorMessages = new Map([
   ["Session id must be a UUID.", "Идентификатор сеанса должен иметь формат UUID."],
   ["Active session not found.", "Активный сеанс не найден."],
   ["Provide at least one field.", "Укажите хотя бы одно поле для изменения."],
-  ["Delete or move the project's tasks before deleting it.", "Перед удалением проекта удалите или перенесите его задачи."],
   ["The project owner is already a member.", "Владелец уже является участником проекта."],
   ["No account is registered with this email address.", "Аккаунт с таким адресом электронной почты не найден."],
   ["This user is already a project member.", "Этот пользователь уже участвует в проекте."],
@@ -482,7 +481,7 @@ app.post("/api/auth/register", asyncRoute(async (req, res) => {
   const errors = {};
   const name = validateString(req.body.name, "name", 2, 100, errors, true);
   const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
-  const password = req.body.password;
+  const password = req.body && req.body.password;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) {
     errors.email = "Введите корректный адрес электронной почты.";
   }
@@ -728,6 +727,17 @@ app.patch("/api/projects/:id", asyncRoute(async (req, res) => {
 
 app.delete("/api/projects/:id", asyncRoute(async (req, res) => {
   const id = requireId(req.params.id, "Project id");
+  const password = req.body.password;
+  if (typeof password !== "string" || !password) {
+    throw apiError(400, "PASSWORD_REQUIRED", "Введите пароль от аккаунта.");
+  }
+  const [users] = await pool.execute(
+    "SELECT password_hash AS passwordHash FROM users WHERE id = ?",
+    [req.user.id]
+  );
+  if (!users.length || !(await bcrypt.compare(password, users[0].passwordHash))) {
+    throw apiError(400, "PASSWORD_INCORRECT", "Пароль указан неверно.");
+  }
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -736,10 +746,22 @@ app.delete("/api/projects/:id", asyncRoute(async (req, res) => {
       [id, req.user.id]
     );
     if (!projects.length) throw apiError(404, "PROJECT_NOT_FOUND", "Проект не найден.");
-    const [tasks] = await connection.execute("SELECT id FROM tasks WHERE project_id = ? LIMIT 1", [id]);
-    if (tasks.length) {
-      throw apiError(409, "PROJECT_HAS_TASKS", "Перед удалением проекта удалите или перенесите его задачи.");
-    }
+    await connection.execute(
+      `DELETE tags FROM task_tags tags
+       JOIN tasks task ON task.id = tags.task_id
+       WHERE task.project_id = ?`,
+      [id]
+    );
+    await connection.execute(
+      `DELETE d FROM task_dependencies d
+       LEFT JOIN tasks task ON task.id = d.task_id
+       LEFT JOIN tasks dependency ON dependency.id = d.depends_on_task_id
+       WHERE task.project_id = ? OR dependency.project_id = ?`,
+      [id, id]
+    );
+    await connection.execute("DELETE FROM tasks WHERE project_id = ?", [id]);
+    await connection.execute("DELETE FROM project_invitations WHERE project_id = ?", [id]);
+    await connection.execute("DELETE FROM project_members WHERE project_id = ?", [id]);
     await connection.execute("DELETE FROM projects WHERE id = ? AND user_id = ?", [id, req.user.id]);
     await connection.commit();
     res.status(204).end();

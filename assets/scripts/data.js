@@ -740,3 +740,46 @@ function createProject(name, color) {
     saveState();
     return project;
 }
+
+function updateProject(id, name, color) {
+    var project = state.projects.find(function (item) {
+        return item.id === id;
+    });
+    if (!project) {
+        return null;
+    }
+    project.name = name.trim();
+    project.color = color;
+    saveState();
+    return project;
+}
+
+function removeProject(id) {
+    var project = state.projects.find(function (item) {
+        return item.id === id;
+    });
+    if (!project) {
+        return false;
+    }
+    var removedTaskIds = state.tasks.filter(function (task) {
+        return task.projectId === id;
+    }).map(function (task) {
+        return task.id;
+    });
+    state.projects = state.projects.filter(function (item) {
+        return item.id !== id;
+    });
+    state.tasks = state.tasks.filter(function (task) {
+        return task.projectId !== id;
+    });
+    state.tasks.forEach(function (task) {
+        task.dependsOn = (task.dependsOn || []).filter(function (dependencyId) {
+            return removedTaskIds.indexOf(dependencyId) === -1;
+        });
+    });
+    if (state.project === id) {
+        state.project = "all";
+    }
+    saveState();
+    return true;
+}

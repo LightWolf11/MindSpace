@@ -681,51 +681,277 @@ function detailRow(label, value) {
     ]);
 }
 
-function openProjectForm() {
-    var name = h("input", { type: "text", placeholder: "Название проекта" });
-    var selectedColor = PROJECT_COLORS[0];
-    var colorPreview = h("span", {
-        class: "project-color-value",
-        text: selectedColor
+function openProjectActions(project) {
+    var taskCount = state.tasks.filter(function (task) {
+        return task.projectId === project.id;
+    }).length;
+    openModal(project.name, h("p", {
+        text: "В проекте задач: " + taskCount + ". Выберите действие."
+    }), [
+        h("button", {
+            class: "btn btn--ghost",
+            type: "button",
+            text: "Отмена",
+            on: { click: closeModal }
+        }),
+        h("span", { class: "spacer" }),
+        h("button", {
+            class: "btn btn--ghost project-action-delete",
+            type: "button",
+            text: "Удалить",
+            on: {
+                click: function () {
+                    closeModal();
+                    askRemoveProject(project);
+                }
+            }
+        }),
+        h("button", {
+            class: "btn btn--primary",
+            type: "button",
+            text: "Изменить",
+            on: {
+                click: function () {
+                    closeModal();
+                    openProjectForm(project.id);
+                }
+            }
+        })
+    ]);
+}
+
+function askRemoveProject(project) {
+    var taskCount = state.tasks.filter(function (task) {
+        return task.projectId === project.id;
+    }).length;
+    var projectNameInput = h("input", {
+        type: "text",
+        placeholder: project.name,
+        autocomplete: "off",
+        "aria-label": "Название проекта для подтверждения удаления"
     });
-    var colorOptions = h("div", {
-        class: "project-color-options",
-        role: "group",
-        "aria-label": "Цвет проекта"
+    var deleteButton = h("button", {
+        class: "btn btn--primary project-action-delete",
+        type: "button",
+        text: "Продолжить",
+        disabled: "disabled"
+    });
+    var message = "Чтобы продолжить, введите название проекта точно так, как оно указано: «" + project.name + "».";
+    if (taskCount) {
+        message += " Вместе с проектом будут удалены все его задачи (" + taskCount + ").";
+    }
+    var body = h("div", { class: "project-delete-confirm" }, [
+        h("p", { text: message }),
+        h("label", { class: "field" }, [
+            h("span", { text: "Название проекта" }),
+            projectNameInput
+        ]),
+        h("p", {
+            class: "field-help",
+            text: "Участники и приглашения этого проекта также будут удалены."
+        })
+    ]);
+    projectNameInput.addEventListener("input", function () {
+        deleteButton.disabled = projectNameInput.value.trim() !== project.name;
+    });
+    deleteButton.addEventListener("click", function () {
+        closeModal();
+        confirmProjectDeletePassword(project);
+    });
+    openModal("Подтвердите удаление проекта", body, [
+        h("button", {
+            class: "btn btn--ghost",
+            type: "button",
+            text: "Отмена",
+            on: { click: closeModal }
+        }),
+        h("span", { class: "spacer" }),
+        deleteButton
+    ]);
+}
+
+function confirmProjectDeletePassword(project) {
+    if (!apiMode()) {
+        showToast("error", "Нужно войти через сервер", "Проверка пароля доступна после запуска приложения через npm start.");
+        return;
+    }
+    var passwordInput = h("input", {
+        type: "password",
+        autocomplete: "current-password",
+        placeholder: "Текущий пароль",
+        required: "required"
+    });
+    var error = h("em", { class: "field_error", text: "" });
+    var confirmButton = h("button", {
+        class: "btn btn--primary project-action-delete",
+        type: "button",
+        text: "Удалить проект",
+        on: {
+            click: async function () {
+                if (!passwordInput.value) {
+                    error.textContent = "Введите пароль.";
+                    passwordInput.focus();
+                    return;
+                }
+                confirmButton.disabled = true;
+                error.textContent = "";
+                try {
+                    await apiRequest("/projects/" + encodeURIComponent(project.id), {
+                        method: "DELETE",
+                        body: { password: passwordInput.value }
+                    });
+                    closeModal();
+                    showToast("success", "Проект удалён", "«" + project.name + "» и его данные удалены.");
+                    reloadApiWorkspace().catch(function (reloadError) {
+                        showToast("error", "Проект удалён, но список не обновлён", reloadError.message);
+                    });
+                } catch (requestError) {
+                    error.textContent = requestError.message;
+                    confirmButton.disabled = false;
+                    passwordInput.focus();
+                }
+            }
+        }
+    });
+    var passwordForm = h("form", { class: "project-delete-confirm", novalidate: "novalidate" }, [
+        h("p", { text: "Для окончательного удаления проекта «" + project.name + "» введите пароль от аккаунта." }),
+        h("label", { class: "field" }, [
+            h("span", { text: "Пароль аккаунта" }),
+            passwordInput,
+            error
+        ])
+    ]);
+    passwordForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        confirmButton.click();
+    });
+    openModal("Подтвердите пароль", passwordForm, [
+        h("button", {
+            class: "btn btn--ghost",
+            type: "button",
+            text: "Отмена",
+            on: { click: closeModal }
+        }),
+        h("span", { class: "spacer" }),
+        confirmButton
+    ]);
+}
+
+function openProjectForm(projectId) {
+    var project = projectId ? state.projects.find(function (item) {
+        return item.id === projectId;
+    }) : null;
+    var selectedColor = project ? project.color : PROJECT_COLORS[0];
+    var selectedIndex = PROJECT_COLORS.indexOf(selectedColor.toLowerCase());
+    var selectedLabel = selectedIndex === -1 ? "Свой цвет" : "Цвет " + (selectedIndex + 1);
+    var name = h("input", {
+        type: "text",
+        placeholder: "Название проекта",
+        maxlength: "80",
+        value: project ? project.name : ""
+    });
+    var colorPicker = h("div", { class: "project-color-picker" });
+    var colorMenu = h("div", { class: "project-color-menu", hidden: "hidden" });
+    var selectedSwatch = h("span", {
+        class: "project-color-swatch",
+        style: "background-color:" + selectedColor
+    });
+    var selectedText = h("span", { text: selectedLabel });
+    var colorTrigger = h("button", {
+        class: "project-color-trigger",
+        type: "button",
+        "aria-haspopup": "listbox",
+        "aria-expanded": "false",
+        on: {
+            click: function () {
+                colorMenu.hidden = !colorMenu.hidden;
+                colorTrigger.setAttribute("aria-expanded", colorMenu.hidden ? "false" : "true");
+            }
+        }
+    }, [
+        selectedSwatch,
+        selectedText,
+        h("span", { class: "project-color-chevron", "aria-hidden": "true" })
+    ]);
+
+    function updateSelectedColor(color, label) {
+        selectedColor = color;
+        selectedLabel = label;
+        selectedSwatch.style.backgroundColor = color;
+        selectedText.textContent = label;
+        colorMenu.querySelectorAll('[role="option"]').forEach(function (option) {
+            option.setAttribute("aria-selected",
+                label !== "Свой цвет" && option.dataset.color === color ? "true" : "false");
+        });
+        colorMenu.hidden = true;
+        colorTrigger.setAttribute("aria-expanded", "false");
+    }
+
+    PROJECT_COLORS.forEach(function (value, index) {
+        var label = "Цвет " + (index + 1);
+        colorMenu.appendChild(h("button", {
+            class: "project-color-option",
+            type: "button",
+            role: "option",
+            data: { color: value },
+            "aria-selected": value === selectedColor ? "true" : "false",
+            on: {
+                click: function () {
+                    updateSelectedColor(value, label);
+                }
+            }
+        }, [
+            h("span", { class: "project-color-swatch", style: "background-color:" + value }),
+            h("span", { text: label })
+        ]));
     });
 
-    function renderColorOptions() {
-        clear(colorOptions);
-        PROJECT_COLORS.forEach(function (value) {
-            colorOptions.appendChild(h("button", {
-                class: "project-color-swatch" + (value === selectedColor ? " is-selected" : ""),
-                type: "button",
-                style: "background-color:" + value,
-                title: value,
-                "aria-label": value,
-                "aria-pressed": value === selectedColor ? "true" : "false",
-                on: {
-                    click: function () {
-                        selectedColor = value;
-                        colorPreview.textContent = value;
-                        renderColorOptions();
-                    }
-                }
-            }));
-        });
-    }
-    renderColorOptions();
+    var customColorInput = h("input", {
+        class: "project-color-input",
+        type: "color",
+        value: selectedColor,
+        "aria-label": "Палитра собственного цвета",
+        on: {
+            input: function () {
+                updateSelectedColor(this.value, "Свой цвет");
+            },
+            change: function () {
+                updateSelectedColor(this.value, "Свой цвет");
+            }
+        }
+    });
+    colorMenu.appendChild(h("button", {
+        class: "project-color-option",
+        type: "button",
+        role: "option",
+        on: {
+            click: function () {
+                colorMenu.hidden = true;
+                colorTrigger.setAttribute("aria-expanded", "false");
+                customColorInput.click();
+            }
+        }
+    }, [
+        h("span", {
+            class: "project-color-swatch project-color-rainbow",
+            "aria-hidden": "true"
+        }),
+        h("span", { text: "Свой цвет..." })
+    ]));
+
+    colorPicker.appendChild(colorTrigger);
+    colorPicker.appendChild(colorMenu);
+    colorPicker.appendChild(customColorInput);
 
     var body = h("div", { class: "field" }, [
         h("span", { text: "Название" }),
         name,
         h("em", { class: "field_error", text: "" }),
         h("span", { text: "Цвет проекта", style: "margin-top:10px" }),
-        colorOptions,
-        colorPreview
+        colorPicker
     ]);
 
-    openModal("Новый проект", body, [
+    openModal(project ? "Редактировать проект" : "Новый проект", body, [
         h("button", {
             class: "btn btn--ghost",
             type: "button",
@@ -736,7 +962,7 @@ function openProjectForm() {
         h("button", {
             class: "btn btn--primary",
             type: "button",
-            text: "Создать проект",
+            text: project ? "Сохранить изменения" : "Создать проект",
             on: {
                 click: function () {
                     var title = name.value.trim();
@@ -746,32 +972,42 @@ function openProjectForm() {
                         name.focus();
                         return;
                     }
-                    var exists = state.projects.some(function (project) {
-                        return project.name.toLowerCase() === title.toLowerCase();
+                    var exists = state.projects.some(function (item) {
+                        return item.id !== projectId && item.name.toLowerCase() === title.toLowerCase();
                     });
                     if (exists) {
                         error.textContent = "Такой проект уже есть";
                         return;
                     }
                     if (apiMode()) {
-                        apiRequest("/projects", {
-                            method: "POST",
+                        apiRequest(project ? "/projects/" + encodeURIComponent(project.id) : "/projects", {
+                            method: project ? "PATCH" : "POST",
                             body: { name: title, color: selectedColor }
                         }).then(async function (result) {
                             await reloadApiWorkspace();
-                            state.project = String(result.project.id);
-                            renderAll();
+                            if (!project) {
+                                state.project = String(result.project.id);
+                                renderAll();
+                            }
                             closeModal();
-                            showToast("success", "Проект создан", "«" + title + "» добавлен в список.");
+                            showToast("success", project ? "Проект обновлён" : "Проект создан",
+                                "«" + title + "» " + (project ? "сохранён." : "добавлен в список."));
                         }).catch(function (requestError) {
                             error.textContent = requestError.message;
                         });
                         return;
                     }
-                    var project = createProject(title, selectedColor);
-                    state.project = project.id;
+                    if (project) {
+                        updateProject(project.id, title, selectedColor);
+                        closeModal();
+                        renderAll();
+                        showToast("success", "Проект обновлён", "Изменения проекта «" + title + "» сохранены.");
+                        return;
+                    }
+                    var createdProject = createProject(title, selectedColor);
+                    state.project = createdProject.id;
                     closeModal();
-                    showToast("success", "Проект создан", "«" + project.name + "» добавлен в список.");
+                    showToast("success", "Проект создан", "«" + createdProject.name + "» добавлен в список.");
                     renderAll();
                 }
             }

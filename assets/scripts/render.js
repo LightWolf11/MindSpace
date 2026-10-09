@@ -365,13 +365,17 @@ function renderSidebar() {
     }
     clear(container);
 
-    container.appendChild(projectButton("all", "Все задачи", "#5c1f2d", state.tasks.length));
+    container.appendChild(projectButton({
+        id: "all",
+        name: "Все задачи",
+        color: "#5c1f2d"
+    }, state.tasks.length));
 
     state.projects.forEach(function (project) {
         var count = state.tasks.filter(function (task) {
             return task.projectId === project.id;
         }).length;
-        container.appendChild(projectButton(project.id, project.name, project.color, count));
+        container.appendChild(projectButton(project, count));
     });
 
     container.appendChild(h("button", {
@@ -388,8 +392,9 @@ function renderSidebar() {
     ]));
 }
 
-function projectButton(id, title, color, count) {
-    return h("button", {
+function projectButton(project, count) {
+    var id = project.id;
+    var selectButton = h("button", {
         class: "project" + (state.project === id ? " is-active" : ""),
         type: "button",
         on: {
@@ -399,9 +404,31 @@ function projectButton(id, title, color, count) {
             }
         }
     }, [
-        h("span", { class: "project_dot", style: "background:" + color }),
-        h("span", { class: "truncate", text: title }),
+        h("span", { class: "project_dot", style: "background:" + project.color }),
+        h("span", { class: "truncate", text: project.name }),
         h("span", { class: "project_count", text: String(count) })
+    ]);
+    if (id === "all") {
+        return selectButton;
+    }
+    if (apiMode() && project.memberRole !== "owner") {
+        return selectButton;
+    }
+    return h("div", { class: "project-row" }, [
+        selectButton,
+        h("button", {
+            class: "project-actions",
+            type: "button",
+            text: "⋯",
+            title: "Настройки проекта",
+            "aria-label": "Действия проекта «" + project.name + "»",
+            on: {
+                click: function (event) {
+                    event.stopPropagation();
+                    openProjectActions(project);
+                }
+            }
+        })
     ]);
 }
 
@@ -1025,9 +1052,15 @@ function renderAll() {
     }
     if (notificationsButton) {
         notificationsButton.hidden = !apiMode();
-        notificationsButton.textContent = state.invitations && state.invitations.length
-            ? "Приглашения · " + state.invitations.length
-            : "Приглашения";
+        var invitationCount = state.invitations ? state.invitations.length : 0;
+        var notificationCount = $("notificationCount");
+        notificationsButton.setAttribute("aria-label", invitationCount
+            ? "Приглашения, новых: " + invitationCount
+            : "Приглашения");
+        if (notificationCount) {
+            notificationCount.hidden = invitationCount === 0;
+            notificationCount.textContent = invitationCount > 9 ? "9+" : String(invitationCount);
+        }
     }
     if (newTaskButton) {
         newTaskButton.disabled = apiMode() && !editableProjects;
