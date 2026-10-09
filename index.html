@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MindSpace</title>
   <link rel="stylesheet" href="assets/styles/reset.css">
-  <link rel="stylesheet" href="assets/styles/style.css">
+  <link rel="stylesheet" href="assets/styles/style.css?v=20261009-cleanup-colors">
 </head>
 <body>
 
@@ -45,7 +45,7 @@
 
           <label class="field" data-field="password">
             <span>Пароль</span>
-            <input type="password" name="password" placeholder="минимум 6 символов">
+            <input type="password" name="password" placeholder="минимум 8 символов">
             <em class="field_error"></em>
           </label>
 
@@ -69,13 +69,13 @@
 
           <label class="field" data-field="password">
             <span>Пароль</span>
-            <input type="password" name="password" placeholder="минимум 6 символов">
+            <input type="password" name="password" placeholder="минимум 8 символов">
             <em class="field_error"></em>
           </label>
 
           <label class="field" data-field="password2">
             <span>Повтор пароля</span>
-            <input type="password" name="password2" placeholder="минимум 6 символов">
+            <input type="password" name="password2" placeholder="минимум 8 символов">
             <em class="field_error"></em>
           </label>
 
@@ -87,18 +87,22 @@
 
   <div id="appScreen" class="app" hidden>
     <header class="header">
-      <b class="logo">MindSpace</b>
+      <button type="button" id="homeBtn" class="logo" aria-label="На главную" title="На главную">
+        <span class="logo_mark" aria-hidden="true">M</span>
+        <span>MindSpace</span>
+      </button>
 
       <input type="search" id="searchInput" class="header_search" placeholder="Поиск по задачам...">
 
       <div class="header_user">
+        <button type="button" id="notificationsBtn" class="btn btn-ghost btn-small" hidden>Приглашения</button>
         <span class="user_avatar" id="userAvatar" hidden></span>
-        <span class="user_avatar" id="userInitials" hidden></span>
         <div class="header_user-text">
           <b id="userName">Пользователь</b>
           <small id="userRole" class="muted">Участник проекта</small>
           <small id="userEmail" class="muted" hidden></small>
         </div>
+        <button type="button" id="profileBtn" class="btn btn-ghost btn-small">Профиль</button>
         <button type="button" id="logoutBtn" class="btn btn-ghost btn-small">Выйти</button>
       </div>
     </header>
@@ -109,7 +113,8 @@
         <nav class="nav" id="mainNav">
           <button type="button" class="nav_item is-active" data-view="overview">Обзор</button>
           <button type="button" class="nav_item" data-view="board">Доска задач</button>
-          <button type="button" class="nav_item" data-view="table">Таблица</button>
+          <button type="button" class="nav_item" data-view="list">Таблица</button>
+          <button type="button" class="nav_item" data-view="stats">Статистика</button>
         </nav>
 
         <div class="sidebar_title">Проекты</div>
@@ -123,6 +128,7 @@
             <p id="pageSubtitle">Управление задачами и зависимостями</p>
           </div>
           <div class="toolbar">
+            <button type="button" id="sharingBtn" class="btn btn-ghost" hidden>Совместный доступ</button>
             <button type="button" id="newTaskBtn" class="btn btn-primary">+ Новая задача</button>
           </div>
         </div>
@@ -144,8 +150,8 @@
     </div>
   </div>
 
-  <script src="assets/scripts/data.js"></script>
-  <script src="assets/scripts/render.js"></script>
-  <script src="assets/scripts/app.js"></script>
+  <script src="assets/scripts/data.js?v=20261009-collaboration"></script>
+  <script src="assets/scripts/render.js?v=20261009-collaboration"></script>
+  <script src="assets/scripts/app.js?v=20261009-cleanup-colors"></script>
 </body>
 </html>

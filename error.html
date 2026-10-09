@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#5c1f2d">
+  <title>{{STATUS}} — MindSpace</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #351821;
+      background: #fbf4f2;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(ellipse at 15% 15%, rgba(201, 139, 127, .17), transparent 35%),
+        radial-gradient(ellipse at 90% 85%, rgba(92, 31, 45, .09), transparent 32%),
+        #fbf4f2;
+    }
+
+    main {
+      width: min(100%, 560px);
+      padding: clamp(30px, 7vw, 58px);
+      border: 1px solid rgba(92, 31, 45, .1);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .88);
+      box-shadow: 0 24px 70px rgba(61, 26, 35, .1);
+      text-align: center;
+      animation: arrive .55s cubic-bezier(.2, .8, .2, 1) both;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: #5c1f2d;
+      font-weight: 700;
+      letter-spacing: -.03em;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 11px;
+      background: #5c1f2d;
+      color: #fff;
+      font-size: 18px;
+    }
+
+    .code {
+      margin: 38px 0 6px;
+      color: #c98b7f;
+      font-size: clamp(68px, 16vw, 104px);
+      font-weight: 750;
+      letter-spacing: -.09em;
+      line-height: 1;
+    }
+
+    h1 {
+      margin: 16px 0 10px;
+      font-size: clamp(23px, 5vw, 30px);
+      letter-spacing: -.04em;
+    }
+
+    p {
+      max-width: 380px;
+      margin: 0 auto;
+      color: #795f65;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 30px;
+    }
+
+    a {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 19px;
+      border: 1px solid #ead8d4;
+      border-radius: 13px;
+      color: #5c1f2d;
+      font: inherit;
+      font-weight: 650;
+      text-decoration: none;
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    a:first-child {
+      border-color: #5c1f2d;
+      background: #5c1f2d;
+      color: #fff;
+    }
+
+    a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(92, 31, 45, .12);
+    }
+
+    a:focus-visible {
+      outline: 3px solid #c98b7f;
+      outline-offset: 3px;
+    }
+
+    @keyframes arrive {
+      from { opacity: 0; transform: translateY(12px) scale(.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand"><span class="brand-mark" aria-hidden="true">M</span>MindSpace</div>
+    <div class="code" aria-hidden="true">{{STATUS}}</div>
+    <h1>{{TITLE}}</h1>
+    <p>{{MESSAGE}}</p>
+    <nav aria-label="Действия">
+      <a href="/">На главную</a>
+      <a href="javascript:history.back()">Вернуться назад</a>
+    </nav>
+  </main>
+</body>
+</html>

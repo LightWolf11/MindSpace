@@ -1,0 +1,363 @@
+{
+  "info": {
+    "_postman_id": "74d319ea-4c02-49ad-a92f-8c03f54d4de1",
+    "name": "MindSpace REST API",
+    "description": "Регистрация, авторизация, профиль, проекты, задачи, статистика и приглашения участников. Задайте baseUrl, email и inviteeEmail.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "email", "value": "tester@example.com" },
+    { "key": "token", "value": "" },
+    { "key": "sessionId", "value": "" },
+    { "key": "projectId", "value": "" },
+    { "key": "inviteeEmail", "value": "collaborator@example.com" },
+    { "key": "invitationId", "value": "" },
+    { "key": "taskId", "value": "" },
+    { "key": "blockerTaskId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Registered and signed in', function () { pm.response.to.have.status(201); });",
+              "if (pm.response.code === 201) { pm.collectionVariables.set('token', pm.response.json().data.token); pm.collectionVariables.set('sessionId', pm.response.json().data.session.id); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Тестовый Пользователь\",\n  \"email\": \"{{email}}\",\n  \"password\": \"Mindspace123!\"\n}" },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Logged in', function () { pm.response.to.have.status(200); });",
+              "if (pm.response.code === 200) { pm.collectionVariables.set('token', pm.response.json().data.token); pm.collectionVariables.set('sessionId', pm.response.json().data.session.id); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"Mindspace123!\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Update profile name (protected)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "******" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Тестовый Пользователь API\"\n}" },
+            "url": "{{baseUrl}}/api/auth/profile"
+          }
+        },
+        {
+          "name": "Upload avatar (protected)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "******" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "avatar", "type": "file", "src": [] }]
+            },
+            "url": "{{baseUrl}}/api/auth/avatar",
+            "description": "Choose one PNG, JPEG, or WebP image no larger than 2 MB."
+          }
+        },
+        {
+          "name": "Delete avatar (protected)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "******" }],
+            "url": "{{baseUrl}}/api/auth/avatar"
+          }
+        },
+        {
+          "name": "Change password (protected)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "******" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"Mindspace123!\",\n  \"newPassword\": \"Mindspace456!\"\n}" },
+            "url": "{{baseUrl}}/api/auth/password"
+          }
+        },
+        {
+          "name": "Current user (protected)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "List active sessions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/auth/sessions"
+          }
+        },
+        {
+          "name": "Missing token (401)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/projects" }
+        },
+        {
+          "name": "Invalid registration data (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"A\",\n  \"email\": \"not-an-email\",\n  \"password\": \"123\"\n}" },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Create project",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Created', function () { pm.response.to.have.status(201); });",
+              "if (pm.response.code === 201) { pm.collectionVariables.set('projectId', pm.response.json().data.project.id); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Мобильное приложение\",\n  \"color\": \"#5c1f2d\"\n}" },
+            "url": "{{baseUrl}}/api/projects"
+          }
+        },
+        {
+          "name": "List projects",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/projects" }
+        },
+        {
+          "name": "Update project",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"color\": \"#c98b7f\"\n}" },
+            "url": "{{baseUrl}}/api/projects/{{projectId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Project collaboration",
+      "item": [
+        {
+          "name": "Invite member",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{inviteeEmail}}\",\n  \"role\": \"editor\"\n}" },
+            "url": "{{baseUrl}}/api/projects/{{projectId}}/invitations",
+            "description": "Owner invites an already registered user. No email is sent; the recipient must sign in using inviteeEmail."
+          }
+        },
+        {
+          "name": "List project members",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/projects/{{projectId}}/members"
+          }
+        },
+        {
+          "name": "List incoming invitations",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 200) {",
+              "  const invitations = pm.response.json().data.invitations;",
+              "  if (invitations.length) pm.collectionVariables.set('invitationId', invitations[0].id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/notifications/invitations",
+            "description": "Run with the recipient's token after changing the collection token by logging in as inviteeEmail."
+          }
+        },
+        {
+          "name": "Accept invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"action\": \"accept\"\n}" },
+            "url": "{{baseUrl}}/api/notifications/invitations/{{invitationId}}/respond"
+          }
+        },
+        {
+          "name": "Decline invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"action\": \"decline\"\n}" },
+            "url": "{{baseUrl}}/api/notifications/invitations/{{invitationId}}/respond"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks and business rules",
+      "item": [
+        {
+          "name": "Create prerequisite task",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Created', function () { pm.response.to.have.status(201); });",
+              "if (pm.response.code === 201) { pm.collectionVariables.set('blockerTaskId', pm.response.json().data.task.id); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"projectId\": {{projectId}},\n  \"title\": \"Подготовить макет\",\n  \"description\": \"Исходная задача\",\n  \"priority\": \"high\",\n  \"status\": \"todo\",\n  \"dueDate\": \"2026-12-01\",\n  \"estimate\": 4,\n  \"dependsOn\": [],\n  \"tags\": [\"дизайн\"]\n}" },
+            "url": "{{baseUrl}}/api/tasks"
+          }
+        },
+        {
+          "name": "Create dependent task",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "pm.test('Created', function () { pm.response.to.have.status(201); });",
+              "if (pm.response.code === 201) { pm.collectionVariables.set('taskId', pm.response.json().data.task.id); }"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"projectId\": {{projectId}},\n  \"title\": \"Реализовать экран задач\",\n  \"description\": \"Список задач с фильтрами\",\n  \"priority\": \"critical\",\n  \"status\": \"todo\",\n  \"dueDate\": \"2026-12-10\",\n  \"estimate\": 12,\n  \"dependsOn\": [{{blockerTaskId}}],\n  \"tags\": [\"frontend\", \"api\"]\n}" },
+            "url": "{{baseUrl}}/api/tasks"
+          }
+        },
+        {
+          "name": "Try to start blocked task (409)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"progress\"\n}" },
+            "url": "{{baseUrl}}/api/tasks/{{taskId}}/status"
+          }
+        },
+        {
+          "name": "Complete prerequisite",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"done\"\n}" },
+            "url": "{{baseUrl}}/api/tasks/{{blockerTaskId}}/status"
+          }
+        },
+        {
+          "name": "Start unblocked task",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"progress\"\n}" },
+            "url": "{{baseUrl}}/api/tasks/{{taskId}}/status"
+          }
+        },
+        {
+          "name": "List filtered tasks",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/tasks?projectId={{projectId}}&priority=critical" }
+        },
+        {
+          "name": "Get task",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/tasks/{{taskId}}" }
+        },
+        {
+          "name": "Update task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"projectId\": {{projectId}},\n  \"title\": \"Экран задач и фильтры\",\n  \"description\": \"Добавить поиск и фильтры списка\",\n  \"priority\": \"high\",\n  \"status\": \"progress\",\n  \"dueDate\": \"2026-12-10\",\n  \"estimate\": 14,\n  \"dependsOn\": [{{blockerTaskId}}],\n  \"tags\": [\"frontend\"]\n}" },
+            "url": "{{baseUrl}}/api/tasks/{{taskId}}"
+          }
+        },
+        {
+          "name": "Statistics",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/stats?projectId={{projectId}}" }
+        },
+        {
+          "name": "Delete task",
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/tasks/{{taskId}}" }
+        },
+        {
+          "name": "Delete prerequisite task",
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/tasks/{{blockerTaskId}}" }
+        },
+        {
+          "name": "Delete project",
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/projects/{{projectId}}" }
+        },
+        {
+          "name": "Logout (revokes the current session)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/auth/logout"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -62,11 +62,15 @@ var state = {
     view: "overview",
     project: "all",
     search: "",
+    filtersOpen: false,
     priority: "all",
     status: "all",
     sort: "priority",
+    sortDirection: "desc",
+    statusChangedTaskId: null,
     projects: [],
-    tasks: []
+    tasks: [],
+    invitations: []
 };
 
 function statusById(id) {
@@ -309,8 +313,8 @@ function validateLogin(values) {
     }
     if (!values.password) {
         errors.password = "Введите пароль";
-    } else if (values.password.length < 6) {
-        errors.password = "Минимум 6 символов";
+    } else if (values.password.length < 8) {
+        errors.password = "Минимум 8 символов";
     }
     return errors;
 }
@@ -411,21 +415,28 @@ function visibleTasks() {
     });
 
     list.sort(function (a, b) {
+        var comparison = 0;
         if (state.sort === "due") {
-            var left = a.dueDate || "9999-12-31";
-            var right = b.dueDate || "9999-12-31";
-            return left < right ? -1 : left > right ? 1 : 0;
-        }
-        if (state.sort === "title") {
-            return a.title.localeCompare(b.title, "ru");
-        }
-        if (state.sort === "status") {
+            if (!a.dueDate || !b.dueDate) {
+                comparison = !a.dueDate && !b.dueDate ? 0 : (!a.dueDate ? 1 : -1);
+            } else {
+                comparison = a.dueDate.localeCompare(b.dueDate);
+            }
+        } else if (state.sort === "title") {
+            comparison = a.title.localeCompare(b.title, "ru");
+        } else if (state.sort === "project") {
+            comparison = projectById(a.projectId).name.localeCompare(projectById(b.projectId).name, "ru");
+        } else if (state.sort === "status") {
             var order = STATUSES.map(function (item) {
                 return item.id;
             });
-            return order.indexOf(a.status) - order.indexOf(b.status);
+            comparison = order.indexOf(a.status) - order.indexOf(b.status);
+        } else if (state.sort === "estimate") {
+            comparison = (Number(a.estimate) || 0) - (Number(b.estimate) || 0);
+        } else {
+            comparison = priorityWeight(a.priority) - priorityWeight(b.priority);
         }
-        return priorityWeight(b.priority) - priorityWeight(a.priority);
+        return state.sortDirection === "desc" ? -comparison : comparison;
     });
 
     return list;
@@ -486,6 +497,15 @@ function demoTasks() {
         makeTask("t14", "Собрать метрики после демо", "p3", "medium", "backlog", 12, 5, ["t13"],
             "Обратная связь команды и план следующего спринта.", ["аналитика"])
     ];
+}
+
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = {
+        demoUser: demoUser,
+        demoProjects: demoProjects,
+        demoTasks: demoTasks,
+        demoPassword: DEMO_PASSWORD
+    };
 }
 
 function resetDemoData() {

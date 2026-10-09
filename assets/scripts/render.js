@@ -93,10 +93,12 @@ function openModal(title, body, foot) {
 }
 
 function closeModal() {
-    if ($("modal").hidden) {
+    var modal = $("modal");
+    if (modal.hidden) {
         return;
     }
-    $("modal").hidden = true;
+    modal.dispatchEvent(new Event("modalclose"));
+    modal.hidden = true;
     clear($("modalBody"));
     clear($("modalFoot"));
     document.body.style.overflow = "";
@@ -154,19 +156,28 @@ function priorityBadge(task) {
 }
 
 function statusBadge(task) {
-    var classes = "badge";
-    if (task.status === "progress") {
-        classes += " badge--progress";
-    } else if (task.status === "done") {
-        classes += " badge--done";
-    } else if (task.status === "review") {
-        classes += " badge--review";
-    } else if (task.status === "todo") {
-        classes += " badge--todo";
-    } else {
-        classes += " badge--backlog";
+    return h("span", {
+        class: "badge badge--status-" + task.status,
+        text: statusById(task.status).title
+    });
+}
+
+function animateTaskStatusChange(taskId) {
+    state.statusChangedTaskId = taskId;
+    renderAll();
+
+    var card = document.querySelector('.task[data-id="' + taskId + '"]');
+    if (!card) {
+        state.statusChangedTaskId = null;
+        return;
     }
-    return h("span", { class: classes, text: statusById(task.status).title });
+
+    window.setTimeout(function () {
+        card.classList.remove("task--status-changed");
+        if (state.statusChangedTaskId === taskId) {
+            state.statusChangedTaskId = null;
+        }
+    }, 850);
 }
 
 function dueBadge(task) {
@@ -198,12 +209,19 @@ function blockedAlert(task) {
 
 function statusSelect(task) {
     var select = h("select", {
-        class: "btn--icon",
+        class: "task_status-select",
         "aria-label": "Изменить статус",
+        disabled: !canEditProject(task.projectId),
         on: {
             change: function () {
-                moveTask(task.id, select.value);
-                renderAll();
+                var nextStatus = select.value;
+                if (nextStatus === task.status) {
+                    return;
+                }
+                changeTaskStatus(task.id, nextStatus).then(function (result) {
+                    if (result.ok && !apiMode()) animateTaskStatusChange(task.id);
+                    if (!result.ok) renderAll();
+                });
             }
         }
     }, STATUSES.map(function (status) {
@@ -267,7 +285,10 @@ function taskListRow(task, side) {
 }
 
 function taskCard(task) {
-    var classes = ["task"];
+    var classes = ["task", "task--" + task.status];
+    if (state.statusChangedTaskId === task.id) {
+        classes.push("task--status-changed");
+    }
     if (task.status === "done") {
         classes.push("is-done");
     }
@@ -282,69 +303,50 @@ function taskCard(task) {
         classes.push("task--blocked");
     }
 
-    var meta = [priorityBadge(task), dueBadge(task)];
-    if (task.estimate) {
-        meta.push(h("span", { class: "badge badge--soft", text: task.estimate + " ч" }));
+    var meta = [priorityBadge(task)];
+    if (isOverdue(task)) {
+        meta.push(h("span", { class: "badge badge--overdue", text: "Просрочено" }));
+    } else if (isDueSoon(task)) {
+        meta.push(h("span", { class: "badge badge--medium", text: "Скоро · " + formatDate(task.dueDate) }));
     }
-    if (isBlocked(task)) {
-        meta.push(h("span", { class: "badge badge--blocked", text: "Заблокирована" }));
-    }
-
-    var deps = dependenciesOf(task);
-    var depsNode = deps.length ? h("div", { class: "deps" }, [
-        h("span", { text: "Зависит от:" }),
-        h("div", { class: "chips" }, deps.map(function (dep) {
-            return h("span", {
-                class: "chip",
-                text: dep.title + (dep.status === "done" ? " · готово" : "")
-            });
-        }))
-    ]) : null;
 
     var card = h("article", {
         class: classes.join(" "),
         data: { id: task.id },
-draggable: "true"
+        draggable: canEditProject(task.projectId) ? "true" : "false",
+        tabindex: "0",
+        role: "group",
+        "aria-label": "Открыть задачу: " + task.title
     }, [
-        h("p", {
-            class: "task_title",
-            text: task.title,
-            on: {
-                click: function () {
-                    openTaskDetails(task.id);
-                }
-            }
-        }),
-        h("p", { class: "faint", text: projectById(task.projectId).name }),
-        task.description ? h("p", { class: "task_desc", text: task.description }) : null,
-        h("div", { class: "task_meta" }, meta),
-        depsNode,
-        blockedAlert(task),
-        h("div", { class: "task_actions" }, [
-            statusSelect(task),
-            h("button", {
-                class: "btn btn--icon",
-                type: "button",
-                text: "Изменить",
-                on: {
-                    click: function () {
-                        openTaskForm(task.id);
-                    }
-                }
+        h("div", { class: "task_heading" }, [
+            h("p", {
+                class: "task_title",
+                text: task.title
             }),
-            h("button", {
-                class: "btn btn--icon",
-                type: "button",
-                text: "Удалить",
-                on: {
-                    click: function () {
-                        askRemoveTask(task.id);
-                    }
-                }
-            })
+            h("p", { class: "faint task_project", text: projectById(task.projectId).name })
+        ]),
+        h("div", { class: "task_meta" }, meta),
+        isBlocked(task) ? h("span", {
+            class: "task_blocked-label",
+            text: "Есть незавершённая зависимость"
+        }) : null,
+        h("div", { class: "task_actions" }, [
+            statusSelect(task)
         ])
     ]);
 
+    card.addEventListener("click", function (event) {
+        if (event.target.closest("select, button, input, a")) {
+            return;
+        }
+        openTaskDetails(task.id);
+    });
+    card.addEventListener("keydown", function (event) {
+        if (event.target === card && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            openTaskDetails(task.id);
+        }
+    });
     card.addEventListener("dragstart", function (event) {
         event.dataTransfer.setData("text/plain", task.id);
         card.classList.add("is-dragging");
@@ -408,8 +410,18 @@ function renderUser() {
         return;
     }
     $("userName").textContent = state.user.name;
-    $("userRole").textContent = state.user.role;
-    $("userAvatar").textContent = state.user.initials;
+    $("userRole").textContent = state.user.role || "Участник проекта";
+    var avatar = $("userAvatar");
+    clear(avatar);
+    if (state.user.avatarUrl) {
+        avatar.appendChild(h("img", {
+            src: state.user.avatarUrl,
+            alt: ""
+        }));
+    } else {
+        avatar.textContent = state.user.initials || "МП";
+    }
+    avatar.hidden = false;
 }
 
 function renderOverview() {
@@ -578,6 +590,7 @@ function renderList() {
                     h("button", {
                         class: "btn btn--icon",
                         type: "button",
+                        disabled: !canEditProject(task.projectId),
                         text: "Изменить",
                         on: {
                             click: function () {
@@ -588,6 +601,7 @@ function renderList() {
                     h("button", {
                         class: "btn btn--icon",
                         type: "button",
+                        disabled: !canEditProject(task.projectId),
                         text: "Удалить",
                         on: {
                             click: function () {
@@ -600,17 +614,41 @@ function renderList() {
         ]);
     });
 
+    function sortHeader(key, title, alignRight) {
+        var active = state.sort === key;
+        var indicator = active ? (state.sortDirection === "asc" ? " ↑" : " ↓") : "";
+        var button = h("button", {
+            class: "table_sort" + (active ? " is-active" : ""),
+            type: "button",
+            "aria-label": "Сортировать: " + title,
+            "aria-pressed": active ? "true" : "false",
+            text: title + indicator,
+            on: {
+                click: function () {
+                    if (state.sort === key) {
+                        state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
+                    } else {
+                        state.sort = key;
+                        state.sortDirection = key === "priority" ? "desc" : "asc";
+                    }
+                    renderView();
+                }
+            }
+        });
+        return h("th", { style: alignRight ? "text-align:right" : "" }, [button]);
+    }
+
     var table = h("div", { class: "table-wrap" }, [
         h("table", { class: "table" }, [
             h("thead", {}, [
                 h("tr", {}, [
-                    h("th", { text: "Задача" }),
-                    h("th", { text: "Проект" }),
-                    h("th", { text: "Приоритет" }),
-                    h("th", { text: "Статус" }),
-                    h("th", { text: "Срок" }),
-                    h("th", { text: "Оценка" }),
-                    h("th", { style: "text-align:right", text: "Действия" })
+                    sortHeader("title", "Задача"),
+                    sortHeader("project", "Проект"),
+                    sortHeader("priority", "Приоритет"),
+                    sortHeader("status", "Статус"),
+                    sortHeader("due", "Срок"),
+                    sortHeader("estimate", "Оценка"),
+                    h("th", { style: "text-align:right" }, ["Действия"])
                 ])
             ]),
             h("tbody", {}, rows)
@@ -625,35 +663,52 @@ function renderList() {
 }
 
 function renderToolbar() {
-    return h("div", { class: "toolbar" }, [
-        filterSelect("Проект", "project", [{ id: "all", title: "Все проекты" }].concat(
-            state.projects.map(function (project) {
-                return { id: project.id, title: project.name };
-            })
-        )),
-        filterSelect("Приоритет", "priority", [{ id: "all", title: "Любой приоритет" }].concat(
-            PRIORITIES.map(function (priority) {
-                return { id: priority.id, title: priority.title };
-            })
-        )),
-        filterSelect("Статус", "status", [{ id: "all", title: "Любой статус" }].concat(
-            STATUSES.map(function (status) {
-                return { id: status.id, title: status.title };
-            })
-        )),
-        filterSelect("Сортировка", "sort", [
-            { id: "priority", title: "По приоритету" },
-            { id: "due", title: "По сроку" },
-            { id: "status", title: "По статусу" },
-            { id: "title", title: "По названию" }
-        ]),
-        h("button", {
-            class: "btn btn--ghost btn--small",
-            type: "button",
-            text: "Сбросить фильтры",
-            on: { click: clearFilters }
-        })
+    var activeFilters = (state.project !== "all" ? 1 : 0) +
+        (state.priority !== "all" ? 1 : 0) +
+        (state.status !== "all" ? 1 : 0) +
+        (state.sort !== "priority" ? 1 : 0);
+
+    var disclosure = h("details", {
+        class: "toolbar-disclosure",
+        open: state.filtersOpen ? "open" : null,
+        on: {
+            toggle: function () {
+                state.filtersOpen = disclosure.open;
+            }
+        }
+    }, [
+        h("summary", { text: activeFilters ? "Фильтры и сортировка · " + activeFilters : "Фильтры и сортировка" }),
+        h("div", { class: "toolbar" }, [
+            filterSelect("Проект", "project", [{ id: "all", title: "Все проекты" }].concat(
+                state.projects.map(function (project) {
+                    return { id: project.id, title: project.name };
+                })
+            )),
+            filterSelect("Приоритет", "priority", [{ id: "all", title: "Любой приоритет" }].concat(
+                PRIORITIES.map(function (priority) {
+                    return { id: priority.id, title: priority.title };
+                })
+            )),
+            filterSelect("Статус", "status", [{ id: "all", title: "Любой статус" }].concat(
+                STATUSES.map(function (status) {
+                    return { id: status.id, title: status.title };
+                })
+            )),
+            filterSelect("Сортировка", "sort", [
+                { id: "priority", title: "По приоритету" },
+                { id: "due", title: "По сроку" },
+                { id: "status", title: "По статусу" },
+                { id: "title", title: "По названию" }
+            ]),
+            activeFilters ? h("button", {
+                class: "btn btn--ghost btn--small",
+                type: "button",
+                text: "Сбросить",
+                on: { click: clearFilters }
+            }) : null
+        ])
     ]);
+    return disclosure;
 }
 
 function filterSelect(label, key, options) {
@@ -662,6 +717,9 @@ function filterSelect(label, key, options) {
         on: {
             change: function () {
                 state[key] = select.value;
+                if (key === "sort") {
+                    state.sortDirection = state.sort === "priority" ? "desc" : "asc";
+                }
                 renderAll();
             }
         }
@@ -677,6 +735,7 @@ function clearFilters() {
     state.priority = "all";
     state.status = "all";
     state.sort = "priority";
+    state.sortDirection = "desc";
     state.search = "";
     if ($("searchInput")) {
         $("searchInput").value = "";
@@ -686,7 +745,6 @@ function clearFilters() {
 
 function renderBoard() {
     var tasks = visibleTasks();
-    var stats = computeStats(tasks);
 
     var columns = STATUSES.map(function (status) {
         var items = tasks.filter(function (task) {
@@ -721,41 +779,71 @@ function renderBoard() {
             if (!id) {
                 return;
             }
-            var result = moveTask(id, status.id);
-            if (result.ok) {
-                showToast("success", "Статус обновлён", "Задача перешла в «" + status.title + "».");
+            var task = taskById(id);
+            if (!task || task.status === status.id) {
+                return;
             }
-            renderAll();
+            changeTaskStatus(id, status.id).then(function (result) {
+                if (!result.ok) {
+                    renderAll();
+                    return;
+                }
+                showToast("success", "Статус обновлён", "Задача перешла в «" + status.title + "».");
+                if (!apiMode()) animateTaskStatusChange(id);
+            });
         });
 
         return column;
     });
 
+    var board = h("div", { class: "board" }, columns);
+    var scrollbar = h("input", {
+        class: "board_scrollbar",
+        id: "boardScrollbar",
+        type: "range",
+        min: "0",
+        max: "0",
+        value: "0",
+        "aria-label": "Прокрутить доску по горизонтали",
+        on: {
+            input: function () {
+                board.scrollLeft = Number(scrollbar.value);
+            }
+        }
+    });
+    var boardScroller = h("div", { class: "board_scroller" }, [board]);
+    var previousScrollbar = $("boardScrollbar");
+    if (previousScrollbar) {
+        previousScrollbar.remove();
+    }
+    document.body.appendChild(scrollbar);
+    board.addEventListener("scroll", syncBoardScrollbar, { passive: true });
+    window.requestAnimationFrame(syncBoardScrollbar);
+
     return h("div", { class: "view" }, [
         pageHead(
             "Доска задач",
-            "Перетащите карточку в другую колонку, чтобы сменить статус",
-            h("button", {
-                class: "btn btn--primary",
-                type: "button",
-                text: "Новая задача",
-                on: {
-                    click: function () {
-                        openTaskForm(null);
-                    }
-                }
-            })
+            "Перетащите карточку или выберите статус в меню"
         ),
         renderToolbar(),
-        h("p", {
-            class: "note",
-            style: "margin-bottom:16px",
-            text: "Заблокировано задач: " + stats.blocked +
-                ". Их нельзя перевести в работу, пока не закрыты зависимости."
-        }),
-        h("div", { class: "board" }, columns)
+        boardScroller
     ]);
 }
+
+function syncBoardScrollbar() {
+    var board = document.querySelector(".board");
+    var scrollbar = $("boardScrollbar");
+    if (!board || !scrollbar) {
+        return;
+    }
+
+    var maxScroll = Math.max(0, board.scrollWidth - board.clientWidth);
+    scrollbar.max = String(maxScroll);
+    scrollbar.value = String(Math.min(board.scrollLeft, maxScroll));
+    scrollbar.hidden = maxScroll === 0;
+}
+
+window.addEventListener("resize", syncBoardScrollbar);
 
 function renderStats() {
     var tasks = visibleTasks();
@@ -891,9 +979,13 @@ function donutGradient(stats) {
 }
 
 function renderView() {
-    var root = $("viewRoot");
+    var root = $("viewContainer");
     if (!root) {
         return;
+    }
+    var boardScrollbar = $("boardScrollbar");
+    if (boardScrollbar) {
+        boardScrollbar.remove();
     }
     clear(root);
 
@@ -910,7 +1002,7 @@ function renderView() {
         }
     } catch (error) {
         node = h("div", { class: "view" }, [
-            h("p", { class: "empty", text: "Не удалось отобразить экран: " + error.message })
+            h("p", { class: "empty", text: "Не удалось отобразить экран. Попробуйте обновить страницу." })
         ]);
     }
 
@@ -918,7 +1010,43 @@ function renderView() {
 }
 
 function renderAll() {
+    var sharingButton = $("sharingBtn");
+    var notificationsButton = $("notificationsBtn");
+    var newTaskButton = $("newTaskBtn");
+    var selectedProject = state.projects.find(function (project) {
+        return String(project.id) === String(state.project);
+    });
+    var editableProjects = state.projects.some(function (project) {
+        return canEditProject(project.id);
+    });
+    if (sharingButton) {
+        sharingButton.hidden = !apiMode();
+        sharingButton.disabled = !selectedProject;
+    }
+    if (notificationsButton) {
+        notificationsButton.hidden = !apiMode();
+        notificationsButton.textContent = state.invitations && state.invitations.length
+            ? "Приглашения · " + state.invitations.length
+            : "Приглашения";
+    }
+    if (newTaskButton) {
+        newTaskButton.disabled = apiMode() && !editableProjects;
+        newTaskButton.title = apiMode() && !editableProjects ? "Нет проектов с правом редактирования" : "";
+    }
     renderSidebar();
     renderUser();
     renderView();
+    syncMainNavigation();
+}
+
+function syncMainNavigation() {
+    document.querySelectorAll("#mainNav .nav_item").forEach(function (item) {
+        var active = item.dataset.view === state.view;
+        item.classList.toggle("is-active", active);
+        if (active) {
+            item.setAttribute("aria-current", "page");
+        } else {
+            item.removeAttribute("aria-current");
+        }
+    });
 }
